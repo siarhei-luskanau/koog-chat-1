@@ -1,4 +1,4 @@
-rootProject.name = "koog-chat"
+rootProject.name = "koog-chat-1"
 enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 
 include(
