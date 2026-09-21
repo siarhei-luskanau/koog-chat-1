@@ -16,10 +16,19 @@ plugins {
 kotlin {
     android {
         compilerOptions { jvmTarget = JvmTarget.fromTarget(libs.versions.javaVersion.get()) }
-        compileSdk =
-            libs.versions.build.android.compileSdk
-                .get()
-                .toInt()
+        compileSdk {
+            version =
+                release(
+                    libs.versions.build.android.compileSdk
+                        .get()
+                        .toInt(),
+                ) {
+                    minorApiLevel =
+                        libs.versions.build.android.compileSdkMinor
+                            .get()
+                            .toInt()
+                }
+        }
         minSdk =
             libs.versions.build.android.minSdk
                 .get()
@@ -125,9 +134,32 @@ kotlin {
         }
 }
 
+// Koin compiler plugin 1.2.x full-graph compile-safety validation drops commonMain
+// @ComponentScan/@Module hints from Kotlin/Native klibs, producing false KOIN-D002
+// "Missing definition" errors on iOS targets while JVM/Android compile fine.
+// https://github.com/InsertKoinIO/koin-compiler-plugin/issues/105
+// https://github.com/InsertKoinIO/koin-compiler-plugin/issues/106
+koinCompiler {
+    compileSafety = false
+}
+
 tasks.withType<Test>().matching { it.name.contains("AndroidHostTest") }.configureEach {
     exclude("**/*CommonTest*")
     systemProperties["robolectric.pixelCopyRenderMode"] = "hardware"
+    // Robolectric reflectively pokes JDK internals (e.g. jdk.internal.access.SharedSecrets
+    // for ApplicationSharedMemory on SDK 37+); modern JDKs (17+) hide those by default.
+    jvmArgs(
+        "--add-opens=java.base/java.lang=ALL-UNNAMED",
+        "--add-opens=java.base/java.util=ALL-UNNAMED",
+        "--add-opens=java.base/java.io=ALL-UNNAMED",
+        "--add-opens=java.base/java.net=ALL-UNNAMED",
+        "--add-opens=java.base/java.security=ALL-UNNAMED",
+        "--add-opens=java.base/java.text=ALL-UNNAMED",
+        "--add-opens=java.base/java.util.concurrent.atomic=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.access=ALL-UNNAMED",
+        "--add-opens=java.base/jdk.internal.util.random=ALL-UNNAMED",
+        "--add-opens=java.desktop/java.awt.font=ALL-UNNAMED",
+    )
 }
 
 tasks.withType<KotlinJsTest>().matching { it.name == "jsBrowserTest" }.configureEach {
