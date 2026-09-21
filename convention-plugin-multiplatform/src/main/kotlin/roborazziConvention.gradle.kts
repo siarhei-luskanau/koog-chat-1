@@ -37,7 +37,7 @@ roborazzi {
         enable = true
         robolectricConfig =
             mapOf(
-                "sdk" to "[36]",
+                "sdk" to "[37]",
                 "qualifiers" to "RobolectricDeviceQualifiers.SmallPhone",
             )
         includePrivatePreviews = true
